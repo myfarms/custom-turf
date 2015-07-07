@@ -1,0 +1,22 @@
+{
+  "name": "turf-custom",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "browserify index.js | uglifyjs -c -m > dist.min.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "gh-clipping-algorithm": "tchannel/greiner-hormann",
+    "turf-difference": "tchannel/turf-difference#kill-jsts",
+    "turf-intersect": "tchannel/turf-intersect#kill-jsts",
+    "turf-union": "tchannel/turf-union#kill-jsts"
+  },
+  "devDependencies": {
+    "browserify": "^10.2.4",
+    "uglifyjs": "^2.4.10"
+  }
+}
