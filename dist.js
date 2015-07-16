@@ -7,7 +7,103 @@ window.customturf = {
     difference: require('turf-difference')
 };
 
-},{"turf-difference":12,"turf-intersect":13,"turf-union":14}],2:[function(require,module,exports){
+},{"turf-difference":2,"turf-intersect":13,"turf-union":24}],2:[function(require,module,exports){
+var gh = require('gh-clipping-algorithm');
+
+/**
+ * Finds the difference between two {@link Polygon|polygons} by clipping the second
+ * polygon from the first.
+ *
+ * @module turf/difference
+ * @category transformation
+ * @param {Feature<Polygon>} poly1 input Polygon feaure
+ * @param {Feature<Polygon>} poly2 Polygon feature to difference from `poly1`
+ * @return {Feature<Polygon>} a Polygon feature showing the area of `poly1` excluding the area of `poly2`
+ * @example
+ * var poly1 = {
+ *   "type": "Feature",
+ *   "properties": {
+ *     "fill": "#0f0"
+ *   },
+ *   "geometry": {
+ *     "type": "Polygon",
+ *     "coordinates": [[
+ *       [-46.738586, -23.596711],
+ *       [-46.738586, -23.458207],
+ *       [-46.560058, -23.458207],
+ *       [-46.560058, -23.596711],
+ *       [-46.738586, -23.596711]
+ *     ]]
+ *   }
+ * };
+ * var poly2 = {
+ *   "type": "Feature",
+ *   "properties": {
+ *     "fill": "#00f"
+ *   },
+ *   "geometry": {
+ *     "type": "Polygon",
+ *     "coordinates": [[
+ *       [-46.650009, -23.631314],
+ *       [-46.650009, -23.5237],
+ *       [-46.509246, -23.5237],
+ *       [-46.509246, -23.631314],
+ *       [-46.650009, -23.631314]
+ *     ]]
+ *   }
+ * };
+ *
+ * var differenced = turf.difference(poly1, poly2);
+ * differenced.properties.fill = '#f00';
+ *
+ * var polygons = {
+ *   "type": "FeatureCollection",
+ *   "features": [poly1, poly2]
+ * };
+ *
+ * //=polygons
+ *
+ * //=differenced
+ */
+
+module.exports = function(poly1, poly2) {
+  // console.log(poly1);
+  var a = poly1.coordinates ? poly1.coordinates : poly1.geometry.coordinates;
+  var b = poly2.coordinates ? poly2.coordinates : poly2.geometry.coordinates;
+  var u = gh.subtract(a, b);
+
+  var feature = {
+    "type": "Feature",
+    "properties": {},
+    "geometry": {}
+  };
+
+  if (!u || u.length == 0) {
+    return undefined;
+  }
+
+  if (gh.utils.isMultiPolygon(u)) {
+    if (u.length > 1) {
+      feature.geometry.type = "MultiPolygon";
+      feature.geometry.coordinates = u;
+    } else {
+      feature.geometry.type = "Polygon";
+      feature.geometry.coordinates = u[0];
+    }
+  } else if (gh.utils.isPolygon(u)) {
+    feature.geometry.type = "Polygon";
+    feature.geometry.coordinates = u;
+  }
+
+  if (poly1.properties) {
+    feature.properties = poly1.properties;
+  }
+
+  return feature;
+};
+
+
+},{"gh-clipping-algorithm":3}],3:[function(require,module,exports){
 module.exports = {
   union: require('./lib/union'),
   intersect: require('./lib/intersect'),
@@ -17,7 +113,7 @@ module.exports = {
   utils: require('./lib/util')
 };
 
-},{"./lib/intersect":4,"./lib/subtract":6,"./lib/union":7,"./lib/util":8}],3:[function(require,module,exports){
+},{"./lib/intersect":5,"./lib/subtract":7,"./lib/union":8,"./lib/util":9}],4:[function(require,module,exports){
 var Ring = require('./ring');
 var Vertex = require('./vertex');
 var pip = require('point-in-polygon');
@@ -111,6 +207,11 @@ function checkQuitCases(sPoints, cPoints, subject, clipper, mode) {
   if (sPoints.count('intersect', true) === 0) {
     switch (mode) {
       case "union":
+        if (sPoints.count('type', 'in') == totalS) {
+          return [[clipper]];
+        } else if (cPoints.count('type', 'in') == totalC) {
+          return [[subject]];
+        }
         // Return both shapes as a multipolygon
         return [[subject], [clipper]];
         break;
@@ -623,7 +724,7 @@ function logIntersections(sPoints) {
 
 
 
-},{"./ring":5,"./util":8,"./vertex":9,"point-in-polygon":10}],4:[function(require,module,exports){
+},{"./ring":6,"./util":9,"./vertex":10,"point-in-polygon":11}],5:[function(require,module,exports){
 var ghClipping = require('./greiner-hormann');
 var union = require('./union');
 var utils = require('./util');
@@ -655,7 +756,7 @@ module.exports = function(subject, clipper) {
   return result;
 }
 
-},{"./greiner-hormann":3,"./subtract":6,"./union":7,"./util":8}],5:[function(require,module,exports){
+},{"./greiner-hormann":4,"./subtract":7,"./union":8,"./util":9}],6:[function(require,module,exports){
 var Vertex = require('./vertex');
 var clockwise = require('turf-is-clockwise');
 
@@ -815,7 +916,7 @@ Ring.prototype.toArray = function () {
 
 module.exports = Ring;
 
-},{"./vertex":9,"turf-is-clockwise":11}],6:[function(require,module,exports){
+},{"./vertex":10,"turf-is-clockwise":12}],7:[function(require,module,exports){
 var util = require('./util');
 var ghClipping = require('./greiner-hormann');
 
@@ -917,7 +1018,7 @@ function subtract(subject, clip, skiploop) {
 
 module.exports = subtract;
 
-},{"./greiner-hormann":3,"./util":8}],7:[function(require,module,exports){
+},{"./greiner-hormann":4,"./util":9}],8:[function(require,module,exports){
 var ghClipping = require('./greiner-hormann');
 var utils = require('./util');
 var subtract = require('./subtract');
@@ -1031,7 +1132,7 @@ module.exports = function(coords, coords2) {
   return hulls;
 }
 
-},{"./greiner-hormann":3,"./subtract":6,"./util":8}],8:[function(require,module,exports){
+},{"./greiner-hormann":4,"./subtract":7,"./util":9}],9:[function(require,module,exports){
 if (!Array.isArray) {
   Array.isArray = function(arg) {
     return Object.prototype.toString.call(arg) === '[object Array]';
@@ -1185,7 +1286,7 @@ exports.pointsEqual = function (pt1, pt2) {
   return false;
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 function Vertex (x, y, alpha, intersect, degenerate) {
     this.x = x;
     this.y = y;
@@ -1261,7 +1362,7 @@ Vertex.prototype.log = function() {
 
 module.exports = Vertex;
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = function (point, vs) {
     // ray-casting algorithm based on
     // http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
@@ -1281,7 +1382,7 @@ module.exports = function (point, vs) {
     return inside;
 };
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = function(ring){
   var sum = 0;
   var i = 1;
@@ -1295,103 +1396,7 @@ module.exports = function(ring){
   }
   return sum > 0;
 }
-},{}],12:[function(require,module,exports){
-var gh = require('gh-clipping-algorithm');
-
-/**
- * Finds the difference between two {@link Polygon|polygons} by clipping the second
- * polygon from the first.
- *
- * @module turf/difference
- * @category transformation
- * @param {Feature<Polygon>} poly1 input Polygon feaure
- * @param {Feature<Polygon>} poly2 Polygon feature to difference from `poly1`
- * @return {Feature<Polygon>} a Polygon feature showing the area of `poly1` excluding the area of `poly2`
- * @example
- * var poly1 = {
- *   "type": "Feature",
- *   "properties": {
- *     "fill": "#0f0"
- *   },
- *   "geometry": {
- *     "type": "Polygon",
- *     "coordinates": [[
- *       [-46.738586, -23.596711],
- *       [-46.738586, -23.458207],
- *       [-46.560058, -23.458207],
- *       [-46.560058, -23.596711],
- *       [-46.738586, -23.596711]
- *     ]]
- *   }
- * };
- * var poly2 = {
- *   "type": "Feature",
- *   "properties": {
- *     "fill": "#00f"
- *   },
- *   "geometry": {
- *     "type": "Polygon",
- *     "coordinates": [[
- *       [-46.650009, -23.631314],
- *       [-46.650009, -23.5237],
- *       [-46.509246, -23.5237],
- *       [-46.509246, -23.631314],
- *       [-46.650009, -23.631314]
- *     ]]
- *   }
- * };
- *
- * var differenced = turf.difference(poly1, poly2);
- * differenced.properties.fill = '#f00';
- *
- * var polygons = {
- *   "type": "FeatureCollection",
- *   "features": [poly1, poly2]
- * };
- *
- * //=polygons
- *
- * //=differenced
- */
-
-module.exports = function(poly1, poly2) {
-  // console.log(poly1);
-  var a = poly1.coordinates ? poly1.coordinates : poly1.geometry.coordinates;
-  var b = poly2.coordinates ? poly2.coordinates : poly2.geometry.coordinates;
-  var u = gh.subtract(a, b);
-
-  var feature = {
-    "type": "Feature",
-    "properties": {},
-    "geometry": {}
-  };
-
-  if (!u || u.length == 0) {
-    return undefined;
-  }
-
-  if (gh.utils.isMultiPolygon(u)) {
-    if (u.length > 1) {
-      feature.geometry.type = "MultiPolygon";
-      feature.geometry.coordinates = u;
-    } else {
-      feature.geometry.type = "Polygon";
-      feature.geometry.coordinates = u[0];
-    }
-  } else if (gh.utils.isPolygon(u)) {
-    feature.geometry.type = "Polygon";
-    feature.geometry.coordinates = u;
-  }
-
-  if (poly1.properties) {
-    feature.properties = poly1.properties;
-  }
-
-  return feature;
-};
-
-
-},{"gh-clipping-algorithm":2}],13:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var gh = require('gh-clipping-algorithm');
 
 /**
@@ -1482,7 +1487,27 @@ module.exports = function(poly1, poly2) {
   return feature;
 };
 
-},{"gh-clipping-algorithm":2}],14:[function(require,module,exports){
+},{"gh-clipping-algorithm":14}],14:[function(require,module,exports){
+arguments[4][3][0].apply(exports,arguments)
+},{"./lib/intersect":16,"./lib/subtract":18,"./lib/union":19,"./lib/util":20,"dup":3}],15:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{"./ring":17,"./util":20,"./vertex":21,"dup":4,"point-in-polygon":22}],16:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"./greiner-hormann":15,"./subtract":18,"./union":19,"./util":20,"dup":5}],17:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"./vertex":21,"dup":6,"turf-is-clockwise":23}],18:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"./greiner-hormann":15,"./util":20,"dup":7}],19:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"./greiner-hormann":15,"./subtract":18,"./util":20,"dup":8}],20:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"dup":9}],21:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],22:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"dup":11}],23:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],24:[function(require,module,exports){
 var gh = require('gh-clipping-algorithm');
 
 /**
@@ -1573,4 +1598,24 @@ module.exports = function(poly1, poly2) {
   return feature;
 };
 
-},{"gh-clipping-algorithm":2}]},{},[1]);
+},{"gh-clipping-algorithm":25}],25:[function(require,module,exports){
+arguments[4][3][0].apply(exports,arguments)
+},{"./lib/intersect":27,"./lib/subtract":29,"./lib/union":30,"./lib/util":31,"dup":3}],26:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{"./ring":28,"./util":31,"./vertex":32,"dup":4,"point-in-polygon":33}],27:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"./greiner-hormann":26,"./subtract":29,"./union":30,"./util":31,"dup":5}],28:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"./vertex":32,"dup":6,"turf-is-clockwise":34}],29:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"./greiner-hormann":26,"./util":31,"dup":7}],30:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"./greiner-hormann":26,"./subtract":29,"./util":31,"dup":8}],31:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"dup":9}],32:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],33:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"dup":11}],34:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}]},{},[1]);
