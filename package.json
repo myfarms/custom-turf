@@ -1,6 +1,6 @@
 {
   "name": "custom-turf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,10 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "gh-clipping-algorithm": "tchannel/greiner-hormann",
-    "turf-difference": "tchannel/turf-difference#kill-jsts",
-    "turf-intersect": "tchannel/turf-intersect#kill-jsts",
-    "turf-union": "tchannel/turf-union#kill-jsts"
+    "turf-difference": "^2.0.0",
+    "turf-intersect": "^1.4.2",
+    "turf-union": "^1.0.2"
   },
   "devDependencies": {
     "browserify": "^10.2.4",
